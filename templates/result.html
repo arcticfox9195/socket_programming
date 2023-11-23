@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Over!</title>
+    <style>
+        body {
+            text-align: center;
+            margin-top: 50px;
+            font-size: 18px; 
+        }
+
+        h1, p {
+            font-size: 1.5em; 
+        }
+    </style>
+
+</head>
+<body>
+    <h1>Game Over!</h1>
+    <p id="resultInfo"></p>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.1.2/socket.io.js"></script>
+    <script>
+        var socket = io.connect('http://' + document.domain + ':' + location.port);
+
+        // Request the score from the server
+        socket.emit('get_score', { 'username': '{{ username }}' });
+
+        // Handle the result event
+        socket.on('result', function(data) {
+            // Update the result information on the page
+            var resultInfo = document.getElementById('resultInfo');
+            resultInfo.innerHTML = 'Username: ' + data.username + '<br>Your Score: ' + data.score;
+        });
+
+        // Add any additional logic you need
+
+        socket.on('connect', function() {
+            console.log('Connected to server');
+        });
+    </script>
+</body>
+</html>
