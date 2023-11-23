@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Start</title>
+    <link rel="stylesheet" href="../static/loginpage.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.1.2/socket.io.js"></script>
+</head>
+<body>
+    <div class="wrapper">
+        <div class="title-text">
+            <div class="title start-game">Enter your username</div>
+        </div>
+        <div class="form-container">
+            <div class="form-inner">
+                <form id="startForm" action='/start_game' class="start-game" method="post" onsubmit="return startGame();">
+                    <pre></pre>
+                    <div class="field">
+                        <input type="text" placeholder="Username" id="username" required>
+                    </div>
+                    <div class="field btn">
+                        <div class="btn-layer"></div>
+                        <input type="submit" value="Start Game" onclick="startGame()">
+                    </div>
+                    
+                    
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        var socket = io.connect('http://' + document.domain + ':' + location.port);
+
+        // 當伺服器端發送 'question' 事件時，處理顯示問題的邏輯
+        socket.on('start_game', function(data){
+            console.log('Received start_game event:', data);
+            var startGameUrl = data.start_game_url;
+            var username = data.username;
+            console.log('Redirecting to:', startGameUrl);
+            console.log('username = ', username);
+            window.location.href = startGameUrl + '?username=' + encodeURIComponent(username);
+        
+        });
+
+    
+
+        socket.on('connect', function() {
+            console.log('Connected to server');
+        });
+
+        function startGame() {
+            var username = document.getElementById('username').value;
+            socket.emit('start_game', { username: username }); 
+            event.preventDefault();
+            return false;
+
+                   
+        }
+    </script>
+   
+</body>
+</html>
