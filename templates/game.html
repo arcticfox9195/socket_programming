@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.1.2/socket.io.js"></script>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+            text-align: center;
+        }
+
+        h1 {
+            background-color: #3498db;
+            color: #fff;
+            padding: 20px;
+            border-radius: 15px;
+            font-size: 2em;
+        }
+
+        #questions-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 30px;
+        }
+
+        .question {
+            background-color: #fff;
+            border-radius: 15px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+            margin: 20px;
+            padding: 30px;
+            text-align: left;
+            max-width: 500px;
+            width: 80%;
+            box-sizing: border-box;
+            font-size: 1.5em;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 20px;
+            font-size: 1.4em;
+        }
+
+        button {
+            background-color: #3498db;
+            color: #fff;
+            border: none;
+            padding: 20px 40px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.5em;
+        }
+    </style>
+    <script>
+        var socket = io.connect('http://' + document.domain + ':' + location.port);
+    
+        var questionCounters = {};
+        var clientId = null;
+    
+        socket.on('question', function(data) {
+            console.log(data);
+            renderQuestion(data);
+        });
+    
+        socket.on('result', function(data) {
+            var resultUrl = data.result_url;
+            var usernameElement = document.querySelector('h1');
+            var welcomeText = 'Welcome, ';
+            var username = usernameElement.textContent.trim().replace(welcomeText, '');
+            var Text = '!';
+            username = username.replace(Text, '');
+            console.log('Redirecting to:', resultUrl);
+            console.log('username = ', username);
+            window.location.href = resultUrl + '?username=' + encodeURIComponent(username);
+        });
+    
+        function requestQuestion() {
+            if (clientId !== null) {
+                if (!questionCounters.hasOwnProperty(clientId)) {
+                    questionCounters[clientId] = -1;
+                }
+    
+                questionCounters[clientId]++;
+                socket.emit('question_request', {'question_number': questionCounters[clientId], 'client_id': clientId});
+            }
+        }
+    
+        clientId = "{{ sid }}";  
+        requestQuestion();
+    
+        function renderQuestion(questionData) {
+            var questionsContainer = document.getElementById('questions-container');
+            questionsContainer.innerHTML = '';
+    
+            var questionDiv = document.createElement('div');
+            questionDiv.classList.add('question');
+    
+            var questionText = document.createElement('p');
+            questionText.textContent = questionData.text;
+            questionDiv.appendChild(questionText);
+    
+            for (var j = 0; j < questionData.options.length; j++) {
+                var optionLabel = document.createElement('label');
+                optionLabel.textContent = questionData.options[j];
+    
+                var optionInput = document.createElement('input');
+                optionInput.type = 'radio';
+                optionInput.name = 'question';
+                optionInput.value = j;
+    
+                optionLabel.appendChild(optionInput);
+                questionDiv.appendChild(optionLabel);
+            }
+    
+            var confirmButton = document.createElement('button');
+            confirmButton.textContent = 'Confirm';
+            confirmButton.onclick = function() {
+                var selectedOption = document.querySelector('input[name="question"]:checked');
+                if (selectedOption && clientId !== null) {
+                    var usernameElement = document.querySelector('h1');
+                    var welcomeText = 'Welcome, ';
+                    var username = usernameElement.textContent.trim().replace(welcomeText, '');
+                    var Text = '!';
+                    username = username.replace(Text, '');
+                    socket.emit('answer', {'answer': selectedOption.value, 'question_number': questionCounters[clientId], 'username': username, 'client_id': clientId});
+                    requestQuestion();
+                }
+            };
+    
+            questionDiv.appendChild(confirmButton);
+            questionsContainer.appendChild(questionDiv);
+        }
+    </script>
+</head>
+<body>
+    <h1>Welcome, {{ username }}!</h1>
+    <div id="questions-container"></div>
+</body>
+</html>
